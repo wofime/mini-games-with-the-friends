@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vote Quest - Battle Royale</title>
+    
+    <!-- Libraries & Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Ton fichier CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Background Elements -->
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <!-- Game Header -->
+    <header class="game-header hidden" id="gameHeader">
+        <div class="header-players" id="headerPlayers"></div>
+        <div class="flex items-center gap-2 text-sm">
+            <span class="text-[var(--muted)]">Actifs:</span>
+            <span class="font-bold text-[var(--accent)]" id="activePlayerCount">0</span>
+        </div>
+    </header>
+
+    <main class="game-container">
+        
+        <!-- Welcome Screen -->
+        <section class="screen active" id="welcomeScreen">
+            <div class="game-card">
+                <div class="text-center mb-8">
+                    <h1 class="font-display text-4xl md:text-5xl font-extrabold mb-3 tracking-tight">Vote Quest</h1>
+                    <p class="text-[var(--muted)]">Battle Royale</p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2 text-[var(--muted)]">Pseudo</label>
+                    <input type="text" id="playerNameInput" class="input-field" placeholder="Ton nom" maxlength="15">
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn btn-primary w-full" id="createRoomBtn">Créer</button>
+                    <input type="text" id="joinRoomInput" class="input-field flex-1" placeholder="Code" maxlength="12">
+                    <button class="btn btn-secondary" id="joinRoomBtn">Joindre</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Lobby Screen -->
+        <section class="screen" id="lobbyScreen">
+            <div class="game-card">
+                <div class="text-center mb-6">
+                    <h2 class="font-display text-xl font-bold mb-1">Salle</h2>
+                    <p class="text-sm text-[var(--muted)]">Code de la salle</p>
+                </div>
+                <div class="room-code mb-4" id="roomCodeDisplay">------</div>
+                <div class="mb-4 flex items-center justify-between">
+                    <span class="text-sm text-[var(--muted)]">Joueurs</span>
+                    <span class="text-sm"><span id="playerCount">1</span>/8</span>
+                </div>
+                <div class="connection-list flex flex-wrap gap-2 mb-4" id="lobbyPlayerList"></div>
+                <button class="btn btn-primary w-full" id="startGameBtn" disabled>Lancer (min 2)</button>
+            </div>
+        </section>
+
+        <!-- Theme Screen -->
+        <section class="screen" id="themeScreen">
+            <div class="game-card text-center">
+                <h2 class="font-display text-2xl font-bold mb-1">Thème</h2>
+                <p class="text-[var(--muted)] text-sm mb-6">Propose un thème</p>
+                <input type="text" id="themeInput" class="input-field text-center" placeholder="Ex: Disney..." maxlength="30">
+                <button class="btn btn-primary w-full mt-5" id="submitThemeBtn">Envoyer</button>
+                <div class="mt-6 hidden" id="themeWaiting">
+                    <p class="text-[var(--muted)] text-sm">Attente... <span class="waiting-dots"><span></span><span></span><span></span></span></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Theme Reveal Screen -->
+        <section class="screen" id="themeRevealScreen">
+            <div class="game-card text-center">
+                <p class="text-xs text-[var(--muted)] uppercase tracking-wider mb-2">Thème</p>
+                <div class="character-display border-blue-400" style="background: linear-gradient(135deg, rgba(0, 102, 255, 0.15), rgba(0, 255, 136, 0.05));">
+                    <h2 class="font-display text-3xl font-bold text-white" id="revealedThemeText">...</h2>
+                </div>
+                <p class="text-[var(--muted)] text-sm mt-4">C'est parti...</p>
+            </div>
+        </section>
+
+        <!-- Input Screen -->
+        <section class="screen" id="inputScreen">
+            <div class="game-card">
+                <div class="theme-badge" id="inputThemeBadge">Thème: ???</div>
+                <div class="hidden mb-4 p-3 rounded-lg bg-[var(--warning-dim)] border border-[var(--warning)] text-center" id="lastChanceWarning">
+                    <p class="font-bold text-[var(--warning)] text-sm">Dernière chance !</p>
+                </div>
+                <div class="text-center mb-6">
+                    <div class="player-tag active mb-3 inline-flex"><span id="inputPlayerName">Joueur</span></div>
+                    <h2 class="font-display text-2xl font-bold">Propose</h2>
+                </div>
+                <input type="text" id="characterInput" class="input-field text-center text-lg" placeholder="Personnage..." maxlength="40">
+                <div class="mt-5 space-y-3">
+                    <button class="btn btn-primary w-full" id="submitCharacterBtn">Valider</button>
+                    <button class="btn btn-danger w-full text-sm" id="passTurnBtn">Abandonner</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Legend Input Screen -->
+        <section class="screen" id="legendInputScreen">
+            <div class="game-card text-center">
+                <div class="mb-6">
+                    <h2 class="font-display text-3xl font-bold text-[var(--legend)]">VICTOIRE</h2>
+                    <p class="text-[var(--muted)] text-sm mt-2">Dernier survivant !</p>
+                </div>
+                <p class="text-sm mb-4">Légende finale (optionnel).</p>
+                <input type="text" id="legendInput" class="input-field text-center text-lg mb-5" placeholder="Perso légendaire..." maxlength="40">
+                <div class="space-y-3">
+                    <button class="btn btn-legend w-full" id="submitLegendBtn">Partir en Légende</button>
+                    <button class="btn btn-secondary w-full" id="endGameSimpleBtn">Terminer</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Waiting Screen -->
+        <section class="screen" id="waitingScreen">
+            <div class="game-card text-center">
+                <div class="theme-badge" id="waitingThemeBadge">Thème: ???</div>
+                <div class="player-tag mb-4 inline-flex"><span id="waitingPlayerName">Joueur</span></div>
+                <h2 class="font-display text-xl font-bold mb-2">En attente</h2>
+                <p class="text-[var(--muted)]"><span id="waitingForName">Joueur</span> joue <span class="waiting-dots"><span></span><span></span><span></span></span></p>
+            </div>
+        </section>
+
+        <!-- Voting Screen -->
+        <section class="screen" id="votingScreen">
+            <div class="game-card">
+                <div class="text-center mb-3">
+                    <p class="text-xs text-[var(--muted)] uppercase tracking-wider">Proposé par</p>
+                    <p class="font-display text-lg font-semibold" id="votingAuthor">Joueur</p>
+                </div>
+                <div class="character-display" id="votingCharacterDisplay">
+                    <p class="text-xs text-[var(--muted)] mb-1 uppercase tracking-wider">Perso</p>
+                    <h3 class="font-display text-2xl font-bold" id="characterNameDisplay">Nom</h3>
+                </div>
+                <div class="vote-counter">
+                    <div class="vote-stat"><div class="vote-stat-number yes" id="yesCount">0</div><div class="vote-stat-label">Oui</div></div>
+                    <div class="vote-stat"><div class="vote-stat-number no" id="noCount">0</div><div class="vote-stat-label">Non</div></div>
+                </div>
+                <div class="progress-bar mb-5"><div class="progress-bar-fill" id="voteProgress" style="width: 0%"></div></div>
+                <p class="text-center text-sm text-[var(--muted)] mb-4 hidden" id="spectatorMessage">Tu es éliminé. Tu regardes.</p>
+                <div class="flex gap-3" id="voteButtons">
+                    <button class="btn btn-vote-yes" id="voteYesBtn">Oui</button>
+                    <button class="btn btn-vote-no" id="voteNoBtn">Non</button>
+                </div>
+                <div class="text-center mt-4 hidden" id="voteWaitingMessage">
+                    <p class="text-[var(--muted)] text-sm">Enregistré <span class="waiting-dots"><span></span><span></span><span></span></span></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Result Screen -->
+        <section class="screen" id="resultScreen">
+            <div class="game-card text-center">
+                <h2 class="font-display text-xl font-bold mb-4">Résultat</h2>
+                <div class="character-display" id="resultCharacterDisplay">
+                    <p class="text-xs text-[var(--muted)] mb-1 uppercase tracking-wider">Perso</p>
+                    <h3 class="font-display text-2xl font-bold" id="resultCharacterName">Nom</h3>
+                </div>
+                <div class="vote-counter">
+                    <div class="vote-stat"><div class="vote-stat-number yes" id="resultYesCount">0</div><div class="vote-stat-label">Oui</div></div>
+                    <div class="vote-stat"><div class="vote-stat-number no" id="resultNoCount">0</div><div class="vote-stat-label">Non</div></div>
+                </div>
+                <p class="text-xl font-bold font-display mb-6" id="resultMessage">Accepté</p>
+                <p class="text-center text-sm text-[var(--muted)]" id="waitingHostMessage">Prochain tour... <span class="waiting-dots"><span></span><span></span><span></span></span></p>
+            </div>
+        </section>
+
+        <!-- Game Over Screen -->
+        <section class="screen" id="gameOverScreen">
+            <div class="game-card text-center">
+                <h1 class="font-display text-3xl font-extrabold mb-1">Fin</h1>
+                <div id="finalScores" class="my-6"></div>
+                <button class="btn btn-secondary w-full" id="leaveRoomBtn">Menu</button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Ton fichier JS -->
+    <script src="script.js"></script>
+</body>
+</html>
